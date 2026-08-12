@@ -29,9 +29,15 @@ ColorEngine — generuje psycho‑geometrię Λ (kolor)
 
 LightEngine — generuje modulację τ (światło)
 
-ImageEngine — generuje defekt ρ (obraz)
+ImageEngine (core/image_engine.py) — generuje defekt ρ (obraz); jedyny silnik z realnym renderingiem (fraktale Mandelbrota/Julii, zapis do PNG bez zewnętrznych bibliotek)
 
-SignalEngine — generuje klucz J (sygnał)
+SignalEngine (core/signal_engine.py) — generuje klucz J (sygnał); realna próbkowanie w czasie (tryby stable/pulse/wave/burst/sweep)
+
+Uwaga: ImageEngine i SignalEngine nie są klasami — to moduły z funkcjami
+`generate_fractal()` i `generate_pulse()`. RhythmEngine, ColorEngine,
+LightEngine i Integrator SĄ klasami. Ta niespójność jest celowa (image/
+signal engine przeszły przez redesign v2, patrz nagłówki tych plików) —
+przykład w sekcji 6 poniżej używa poprawnego API dla obu wariantów.
 
 Integrator
 Integrator — łączy pięć kanałów w jeden strumień TIMDER‑FLOW
@@ -71,15 +77,27 @@ Te same parametry → ten sam model → przewidywalne wyniki.
 TIMDER‑zgodność  
 Model jest zgodny z zasadami TIMDER: skręt, Λ–τ–ρ, J‑klucz, rytm, defekt.
 
-🔹 6. Przykład przepływu (pseudokod)
+🔹 6. Przykład przepływu (poprawiony, zgodny z rzeczywistym API — patrz examples/flow_script.py)
 Kod
-rhythm = RhythmEngine.generate(60, "skręt")
-color  = ColorEngine.palette("Λ-relax")
-light  = LightEngine.sequence("τ-soft")
-image  = ImageEngine.fractal("ρ-smooth")
-signal = SignalEngine.pulse(1.0)
+from core.rhythm_engine import RhythmEngine
+from core.color_engine import ColorEngine
+from core.light_engine import LightEngine
+from core.image_engine import generate_fractal
+from core.signal_engine import generate_pulse
+from core.integrator import Integrator
 
-flow = Integrator.flow(rhythm, color, light, image, signal)
+rhythm = RhythmEngine().generate(bpm=60, pattern="skręt")
+color  = ColorEngine().palette(mode="Λ-relax")
+light  = LightEngine().sequence(pattern="τ-soft")
+image  = generate_fractal(preset="ρ-smooth", size=128, render=False)
+signal = generate_pulse(level=1.0, mode="pulse", duration_s=5.0)
+
+flow = Integrator().flow(rhythm, color, light, image, signal)
+
+Poprzednia wersja tej sekcji (`ImageEngine.fractal(...)`, `SignalEngine.pulse(...)`)
+odwoływała się do API sprzed redesignu v2 tych dwóch modułów i nie
+działała z aktualnym kodem — poprawione tutaj i w examples/flow_script.py.
+
 🔹 7. Zastosowania modelu
 Model może być wykorzystany do:
 
